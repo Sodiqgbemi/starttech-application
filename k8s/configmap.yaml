@@ -3,5 +3,4 @@ kind: ConfigMap
 metadata:
   name: starttech-config
 data:
-  # Replace with terraform output redis_host after infra apply
-  REDIS_HOST: "REPLACE_WITH_REDIS_HOST"
+  REDIS_HOST: "starttech-redis.7jtfcu.0001.eun1.cache.amazonaws.com:6379"
