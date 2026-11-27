@@ -21,8 +21,9 @@ func RegisterRoutes(
 	healthHandler *handlers.HealthHandler,
 	authMiddleware gin.HandlerFunc,
 ) {
-	// Public routes
+	// Health checks (assessment accepts /health or /api/v1/health)
 	router.GET("/health", healthHandler.CheckHealth)
+	router.GET("/api/v1/health", healthHandler.CheckHealth)
 
 	// Swagger documentation route
 	router.GET("/swagger/*any", func(c *gin.Context) {
@@ -38,35 +39,39 @@ func RegisterRoutes(
 		ginSwagger.WrapHandler(swaggerFiles.Handler)(c)
 	})
 
-	authRoutes := router.Group("/auth")
+	// All app routes under /api so CloudFront /api/* can reach the ALB cleanly
+	api := router.Group("/api")
 	{
-		authRoutes.POST("/register", userHandler.Register)
-		authRoutes.POST("/login", userHandler.Login)
-		authRoutes.POST("/logout", userHandler.Logout)
-		authRoutes.GET("/username-check/:username", userHandler.CheckUsernameAvailability)
-	}
+		api.GET("/health", healthHandler.CheckHealth)
+		api.GET("/v1/health", healthHandler.CheckHealth)
 
-	// Protected routes
-	protected := router.Group("")
-	protected.Use(authMiddleware)
-	{
-		// Protected task routes (using /tasks to avoid conflict with frontend /todos route)
-		taskRoutes := protected.Group("/tasks")
+		authRoutes := api.Group("/auth")
 		{
-			taskRoutes.POST("", todoHandler.CreateTodo)
-			taskRoutes.GET("", todoHandler.GetAllTodos)
-			taskRoutes.GET("/:id", todoHandler.GetTodoByID)
-			taskRoutes.PUT("/:id", todoHandler.UpdateTodo)
-			taskRoutes.DELETE("/:id", todoHandler.DeleteTodo)
+			authRoutes.POST("/register", userHandler.Register)
+			authRoutes.POST("/login", userHandler.Login)
+			authRoutes.POST("/logout", userHandler.Logout)
+			authRoutes.GET("/username-check/:username", userHandler.CheckUsernameAvailability)
 		}
 
-		// Protected user routes
-		userRoutes := protected.Group("/users")
+		protected := api.Group("")
+		protected.Use(authMiddleware)
 		{
-			userRoutes.GET("/me", userHandler.GetCurrentUser)
-			userRoutes.PUT("/me", userHandler.UpdateUser)
-			userRoutes.PUT("/me/password", userHandler.ChangePassword)
-			userRoutes.DELETE("/me", userHandler.DeleteUser)
+			taskRoutes := protected.Group("/tasks")
+			{
+				taskRoutes.POST("", todoHandler.CreateTodo)
+				taskRoutes.GET("", todoHandler.GetAllTodos)
+				taskRoutes.GET("/:id", todoHandler.GetTodoByID)
+				taskRoutes.PUT("/:id", todoHandler.UpdateTodo)
+				taskRoutes.DELETE("/:id", todoHandler.DeleteTodo)
+			}
+
+			userRoutes := protected.Group("/users")
+			{
+				userRoutes.GET("/me", userHandler.GetCurrentUser)
+				userRoutes.PUT("/me", userHandler.UpdateUser)
+				userRoutes.PUT("/me/password", userHandler.ChangePassword)
+				userRoutes.DELETE("/me", userHandler.DeleteUser)
+			}
 		}
 	}
 }

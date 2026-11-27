@@ -1,0 +1,10 @@
+api/.env
+api/.env.*
+!**/.env.example
+api/**/*_test.go
+api/**/*.cp
+api/docker-compose.yaml
+api/Makefile
+README.md
+.git
+.gitignore

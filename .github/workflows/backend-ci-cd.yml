@@ -1,0 +1,82 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "k8s/**"
+      - ".github/workflows/backend-ci-cd.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ECR_REPOSITORY: starttech-backend-api
+  EKS_CLUSTER: starttech-cluster
+
+jobs:
+  backend:
+    name: Test, Build, Deploy Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.1"
+          cache-dependency-path: backend/api/go.sum
+
+      - name: Run Go tests
+        working-directory: backend/api
+        run: go test ./...
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image tag
+        id: meta
+        run: |
+          echo "IMAGE_TAG=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+          echo "IMAGE_URI=${{ steps.ecr.outputs.registry }}/${ECR_REPOSITORY}:${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+
+      - name: Build Docker image
+        working-directory: backend
+        run: docker build -t "${{ steps.meta.outputs.IMAGE_URI }}" .
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ steps.meta.outputs.IMAGE_URI }}
+          format: table
+          exit-code: "0"
+          severity: CRITICAL,HIGH
+
+      - name: Push image to ECR
+        run: docker push "${{ steps.meta.outputs.IMAGE_URI }}"
+
+      - name: Update deployment image tag
+        run: |
+          sed -i "s|image:.*|image: ${{ steps.meta.outputs.IMAGE_URI }}|" k8s/deployment.yaml
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name "${EKS_CLUSTER}" --region "${{ secrets.AWS_REGION }}"
+
+      - name: Apply Kubernetes manifests
+        run: kubectl apply -f k8s/
+
+      - name: Verify rollout
+        run: kubectl rollout status deployment/backend-api --timeout=180s

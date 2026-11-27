@@ -51,6 +51,11 @@ func LoadConfig(path string) (config Config, err error) {
 		return
 	}
 
+	// Assignment requires REDIS_HOST; fall back to REDIS_ADDR for local/dev compatibility.
+	if redisHost := viper.GetString("REDIS_HOST"); redisHost != "" {
+		config.RedisAddr = redisHost
+	}
+
 	// Manually handle comma-separated strings for slices if viper didn't split them
 	if allowedOrigins := viper.GetString("ALLOWED_ORIGINS"); allowedOrigins != "" {
 		parts := strings.Split(allowedOrigins, ",")
