@@ -38,6 +38,17 @@ func LoadConfig(path string) (config Config, err error) {
 	viper.SetDefault("COOKIE_DOMAINS", []string{"localhost"})
 	viper.SetDefault("SECURE_COOKIE", false)
 	viper.SetDefault("ALLOWED_ORIGINS", []string{"http://localhost:5173"})
+	viper.SetDefault("LOG_LEVEL", "INFO")
+	viper.SetDefault("LOG_FORMAT", "json")
+
+	// Explicit binds so Unmarshal picks up container env vars (Viper AutomaticEnv alone is not enough).
+	for _, key := range []string{
+		"PORT", "MONGO_URI", "DB_NAME", "JWT_SECRET_KEY", "JWT_EXPIRATION_HOURS",
+		"ENABLE_CACHE", "REDIS_ADDR", "REDIS_HOST", "REDIS_PASSWORD",
+		"LOG_LEVEL", "LOG_FORMAT", "COOKIE_DOMAINS", "SECURE_COOKIE", "ALLOWED_ORIGINS",
+	} {
+		_ = viper.BindEnv(key)
+	}
 
 	err = viper.ReadInConfig()
 	if err != nil {
