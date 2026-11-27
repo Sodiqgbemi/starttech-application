@@ -1,10 +1,9 @@
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: starttech-backend
+  name: backend-api
   labels:
-    app: starttech-backend
+    app: backend-api
 spec:
   replicas: 2
   strategy:
@@ -14,11 +13,11 @@ spec:
       maxUnavailable: 0
   selector:
     matchLabels:
-      app: starttech-backend
+      app: backend-api
   template:
     metadata:
       labels:
-        app: starttech-backend
+        app: backend-api
     spec:
       containers:
         - name: backend
@@ -35,7 +34,16 @@ spec:
             - name: LOG_FORMAT
               value: "json"
             - name: ENABLE_CACHE
-              value: "false"
+              value: "true"
+            - name: SECURE_COOKIE
+              value: "true"
+            - name: ALLOWED_ORIGINS
+              value: "*"
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: starttech-config
+                  key: REDIS_HOST
             - name: MONGO_URI
               valueFrom:
                 secretKeyRef:
@@ -48,13 +56,13 @@ spec:
                   key: JWT_SECRET_KEY
           readinessProbe:
             httpGet:
-              path: /health
+              path: /api/v1/health
               port: 8080
             initialDelaySeconds: 15
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /health
+              path: /api/v1/health
               port: 8080
             initialDelaySeconds: 30
             periodSeconds: 20

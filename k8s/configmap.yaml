@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: starttech-config
+data:
+  # Replace with terraform output redis_host after infra apply
+  REDIS_HOST: "REPLACE_WITH_REDIS_HOST"
