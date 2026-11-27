@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-AWS_REGION="${AWS_REGION:-us-east-1}"
+AWS_REGION="${AWS_REGION:-eu-north-1}"
 EKS_CLUSTER="${EKS_CLUSTER:-starttech-cluster}"
 REVISION="${1:-}"
 

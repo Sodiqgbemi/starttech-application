@@ -17,7 +17,7 @@ scripts/      deploy / health-check / rollback helpers
 |--------|---------|
 | `AWS_ACCESS_KEY_ID` | Deploy credentials |
 | `AWS_SECRET_ACCESS_KEY` | Deploy credentials |
-| `AWS_REGION` | e.g. `us-east-1` |
+| `AWS_REGION` | e.g. `eu-north-1` |
 | `FRONTEND_S3_BUCKET` | From infra `frontend_bucket_name` |
 | `CLOUDFRONT_DISTRIBUTION_ID` | From infra `cloudfront_distribution_id` |
 
