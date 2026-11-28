@@ -23,7 +23,6 @@ func RegisterRoutes(
 ) {
 	// Health checks (assessment accepts /health or /api/v1/health)
 	router.GET("/health", healthHandler.CheckHealth)
-	router.GET("/api/v1/health", healthHandler.CheckHealth)
 
 	// Swagger documentation route
 	router.GET("/swagger/*any", func(c *gin.Context) {
